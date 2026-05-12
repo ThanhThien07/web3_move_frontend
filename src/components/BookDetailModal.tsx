@@ -1,183 +1,155 @@
 import { useState } from 'react';
-import { useCurrentAccount, useCurrentClient, useDAppKit } from '@mysten/dapp-kit-react';
-import { X, ShoppingCart, Loader2, CheckCircle2, AlertTriangle, ExternalLink, BookOpen } from 'lucide-react';
+import { X, ShoppingCart, Loader2, CheckCircle, AlertCircle, ShieldCheck } from 'lucide-react';
+import { useSuiClient, useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
+import { Transaction } from '@mysten/sui/transactions';
 import { type BookItem } from '../lib/books-api';
 import { getPaymentConfig, MIST_PER_SUI } from '../lib/payment-config';
-import { buildPaymentTx, parsePaymentResult } from '../lib/payment-tx';
-import { requestBookFulfillment } from '../lib/fulfillment-api';
 import { toast } from 'sonner';
-import { useAuth } from './AuthContext';
 
 interface BookDetailModalProps {
   book: BookItem;
   onClose: () => void;
-  onSuccess: (record: any) => void;
 }
 
-export default function BookDetailModal({ book, onClose, onSuccess }: BookDetailModalProps) {
+export default function BookDetailModal({ book, onClose }: BookDetailModalProps) {
   const account = useCurrentAccount();
-  const client = useCurrentClient();
-  const dAppKit = useDAppKit();
-  const { user } = useAuth();
-  
+  const client = useSuiClient();
+  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [accessUrl, setAccessUrl] = useState<string | null>(null);
 
   const paymentConfig = getPaymentConfig();
 
   async function handlePurchase() {
-    if (!account) return;
+    if (!account) {
+      toast.error('Vui lòng kết nối ví để thanh toán');
+      return;
+    }
     setLoading(true);
     setError(null);
 
     try {
-      const tx = await buildPaymentTx(
-        paymentConfig,
-        book.priceMist,
-        client,
-        account.address,
-        book.id
+      // 🚀 SỬ DỤNG TRANSACTION TRỰC TIẾP ĐỂ TRÁNH LỖI BUILD
+      const tx = new Transaction();
+      const amount = book.priceMist;
+
+      // Gửi tiền trực tiếp cho người bán
+      const receiver = book.owner_wallet === 'Admin' ? paymentConfig.receiver : book.owner_wallet;
+      const [coin] = tx.splitCoins(tx.gas, [amount]);
+      tx.transferObjects([coin], receiver);
+
+      signAndExecuteTransaction(
+        { transaction: tx },
+        {
+          onSuccess: async (result) => {
+            // Đợi xác nhận giao dịch
+            await client.waitForTransaction({ digest: result.digest });
+
+            // Đồng bộ với backend (nếu có)
+            try {
+              await fetch(`${paymentConfig.booksApiBaseUrl}/api/verify-purchase`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  bookId: book.id,
+                  digest: result.digest,
+                  walletAddress: account.address,
+                  amount: (Number(book.priceMist) / Number(MIST_PER_SUI)).toString()
+                })
+              });
+            } catch (e) {
+              console.warn('Sync failed - transaction is still successful on-chain');
+            }
+
+            setSuccess(true);
+            toast.success('Thanh toán thành công!');
+          },
+          onError: (err) => {
+            setError(err.message);
+            toast.error('Giao dịch thất bại');
+          }
+        }
       );
-
-      const result = await dAppKit.signAndExecuteTransaction({ transaction: tx });
-      try {
-        const parsed = parsePaymentResult(result as any);
-        await client.waitForTransaction({ digest: parsed.digest });
-        
-        const fulfillment = await requestBookFulfillment({
-          config: paymentConfig,
-          book,
-          walletAddress: account.address,
-          digest: parsed.digest,
-        });
-
-        const record = {
-          bookId: book.id,
-          title: book.title,
-          digest: parsed.digest,
-          accessUrl: fulfillment.accessUrl,
-          message: fulfillment.message,
-          createdAt: new Date().toISOString(),
-        };
-
-        setAccessUrl(fulfillment.accessUrl);
-        setSuccess(true);
-        onSuccess(record);
-        toast.success(`Mua sách "${book.title}" thành công!`);
-      } catch (err: any) {
-        setError(err.message || 'Lỗi xử lý đơn hàng.');
-      } finally {
-        setLoading(false);
-      }
     } catch (err: any) {
-      setError(err.message || 'Giao dịch thất bại.');
+      setError(err.message || 'Lỗi không xác định');
+    } finally {
       setLoading(false);
     }
   }
 
-  function formatPrice(mist: bigint) {
-    return (Number(mist) / Number(MIST_PER_SUI)).toLocaleString();
-  }
+  const priceSui = (Number(book.priceMist) / Number(MIST_PER_SUI)).toFixed(2);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
-      
-      <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col md:flex-row">
-        <button 
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 z-10 transition-colors"
-        >
-          <X className="w-6 h-6" />
-        </button>
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
 
-        {/* Left: Image */}
-        <div className="relative aspect-[3/4] md:aspect-auto md:w-1/2 h-full min-h-[400px] bg-slate-100">
-          {book.coverUrl ? (
-            <img 
-              src={book.coverUrl} 
-              alt={book.title} 
-              className="w-full h-full object-cover mix-blend-multiply"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <BookOpen className="w-24 h-24 text-slate-300" />
-            </div>
-          )}
+      <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl relative z-10 overflow-hidden flex flex-col md:flex-row max-h-[90vh]">
+        {/* Book Cover */}
+        <div className="w-full md:w-2/5 aspect-3/4 md:aspect-auto bg-slate-100 relative group">
+          <img src={book.coverUrl} className="w-full h-full object-cover" alt={book.title} />
+          <div className="absolute inset-0 bg-linear-to-t from-slate-900/40 to-transparent"></div>
         </div>
 
-        {/* Right: Content */}
-        <div className="p-8 md:w-1/2 flex flex-col justify-center space-y-6">
-          <div className="space-y-2">
-            <span className="text-[#10b981] text-sm font-bold uppercase tracking-widest">Sách điện tử</span>
-            <h2 className="text-3xl font-black text-slate-800 leading-tight">{book.title}</h2>
-            <p className="text-slate-500">Tác giả: <span className="text-slate-700 font-semibold">{book.author}</span></p>
-          </div>
+        {/* Content */}
+        <div className="grow p-8 md:p-10 flex flex-col">
+          <button onClick={onClose} className="absolute top-6 right-6 p-2 rounded-xl hover:bg-slate-100 transition-colors">
+            <X className="w-5 h-5 text-slate-400" />
+          </button>
 
-          <div className="py-6 border-y border-slate-100 space-y-4">
-            <p className="text-slate-600 text-sm leading-relaxed">
-              Mua và sở hữu cuốn sách này vĩnh viễn trên blockchain Sui. Giao dịch an toàn, minh bạch và nhanh chóng.
-            </p>
-            <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <span className="text-slate-600 font-medium">Giá bán:</span>
-              <span className="text-2xl font-black text-[#f59e0b]">
-                {formatPrice(book.priceMist)} <span className="text-base text-slate-500 font-semibold">SUI</span>
-              </span>
+          <div className="space-y-6 grow">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 leading-tight mb-2">{book.title}</h2>
+              <p className="text-slate-500 font-bold">{book.author}</p>
             </div>
-          </div>
 
-          {!account ? (
-            <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
-              <p className="text-sm text-amber-700 leading-relaxed">
-                Vui lòng kết nối ví Sui của bạn để thực hiện thanh toán.
+            <div className="flex items-center gap-4">
+              <span className="text-3xl font-black text-brand-primary">{priceSui} <span className="text-sm">SUI</span></span>
+              <div className="h-6 w-px bg-slate-200"></div>
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Digital E-Book</span>
+            </div>
+
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-start gap-4">
+              <ShieldCheck className="w-5 h-5 text-brand-primary mt-0.5" />
+              <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                Sở hữu vĩnh viễn trên Blockchain. Bạn có thể truy cập nội dung ngay sau khi giao dịch được xác nhận.
               </p>
             </div>
-          ) : success ? (
-            <div className="space-y-4 animate-in slide-in-from-bottom-2 duration-500">
-              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-3">
-                <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                <div>
-                  <p className="text-sm font-bold text-emerald-700">Thanh toán thành công!</p>
-                  <p className="text-xs text-emerald-600">Sách đã được thêm vào tủ sách của bạn.</p>
-                </div>
+
+            {error && (
+              <div className="p-4 bg-rose-50 rounded-2xl border border-rose-100 flex items-center gap-3 text-rose-600 text-xs font-bold">
+                <AlertCircle className="w-4 h-4" /> {error}
               </div>
-              <a 
-                href={accessUrl || '#'} 
-                target="_blank" 
-                rel="noreferrer"
-                className="w-full py-4 bg-[#10b981] hover:bg-[#059669] text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-[#10b981]/20"
-              >
-                <ExternalLink className="w-5 h-5" /> Đọc sách ngay
-              </a>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <button 
-                disabled={loading}
+            )}
+          </div>
+
+          <div className="mt-8 pt-8 border-t border-slate-50">
+            {success ? (
+              <div className="flex flex-col items-center gap-4 animate-in zoom-in duration-300">
+                <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+                  <CheckCircle className="w-6 h-6" />
+                </div>
+                <p className="text-emerald-600 font-black text-sm uppercase tracking-widest">Mua hàng thành công!</p>
+                <button onClick={onClose} className="text-slate-400 hover:text-slate-600 font-bold text-xs">Đóng cửa sổ</button>
+              </div>
+            ) : (
+              <button
                 onClick={handlePurchase}
-                className="w-full py-4 bg-[#10b981] hover:bg-[#059669] disabled:bg-slate-300 disabled:text-slate-500 text-white rounded-xl font-bold flex items-center justify-center gap-3 transition-all shadow-md shadow-[#10b981]/20 group relative overflow-hidden"
+                disabled={loading}
+                className="w-full bg-brand-primary hover:bg-brand-primary/90 disabled:bg-slate-200 text-white py-5 rounded-2xl font-black shadow-xl shadow-brand-primary/20 transition-all flex items-center justify-center gap-3 group active:scale-95"
               >
                 {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Đang xử lý giao dịch...</span>
-                  </>
+                  <Loader2 className="w-6 h-6 animate-spin" />
                 ) : (
                   <>
-                    <ShoppingCart className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    <span>Mua bằng SUI</span>
+                    <ShoppingCart className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                    MUA NGAY BẰNG SUI
                   </>
                 )}
               </button>
-              
-              {error && (
-                <p className="text-center text-sm text-rose-500 font-medium bg-rose-50 p-2 rounded-lg">{error}</p>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

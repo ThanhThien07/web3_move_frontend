@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ConnectButton } from '@mysten/dapp-kit';
-import { BookOpen, Search, Gift, LogOut, User as UserIcon, Heart, Menu, X, History, Globe } from 'lucide-react';
+import { BookOpen, Gift, LogOut, User as UserIcon, Heart, Menu, X, History } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { useI18n } from '../i18n';
@@ -12,15 +12,15 @@ function LanguageSwitcher() {
   const { lang, setLang } = useI18n();
   return (
     <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 p-0.5 rounded-lg shadow-sm scale-90 md:scale-100">
-      <button 
+      <button
         onClick={() => setLang('en')}
-        className={`px-2 py-0.5 rounded text-[9px] font-black transition-all ${lang === 'en' ? 'bg-[#10b981] text-white' : 'text-slate-400'}`}
+        className={`px-2 py-0.5 rounded text-[9px] font-black transition-all ${lang === 'en' ? 'bg-brand-primary text-white' : 'text-slate-400'}`}
       >
         EN
       </button>
-      <button 
+      <button
         onClick={() => setLang('vi')}
-        className={`px-2 py-0.5 rounded text-[9px] font-black transition-all ${lang === 'vi' ? 'bg-[#10b981] text-white' : 'text-slate-400'}`}
+        className={`px-2 py-0.5 rounded text-[9px] font-black transition-all ${lang === 'vi' ? 'bg-brand-primary text-white' : 'text-slate-400'}`}
       >
         VI
       </button>
@@ -40,10 +40,9 @@ export default function Navbar() {
   useEffect(() => {
     const checkCountdown = () => {
       if (user?.last_checkin) {
-        const lastCheckinDate = new Date(user.last_checkin).getTime();
         const now = new Date();
         const todayStr = now.toISOString().split('T')[0];
-        
+
         if (user.last_checkin === todayStr) {
           const tomorrow = new Date(now);
           tomorrow.setDate(tomorrow.getDate() + 1);
@@ -77,7 +76,7 @@ export default function Navbar() {
         body: JSON.stringify({ username: user.username })
       });
       const data = await res.json();
-      
+
       if (res.ok) {
         toast.success(data.message);
         if (data.user) {
@@ -102,41 +101,41 @@ export default function Navbar() {
 
   const NavLinks = () => (
     <>
-      <Link 
-        to="/" 
+      <Link
+        to="/"
         onClick={() => setIsMenuOpen(false)}
-        className={`flex items-center gap-2 transition-colors relative group ${isActive('/') ? 'text-[#10b981]' : 'text-slate-600 md:text-slate-800 hover:text-[#10b981]'}`}
+        className={`flex items-center gap-2 transition-colors relative group ${isActive('/') ? 'text-brand-primary' : 'text-slate-600 md:text-slate-800 hover:text-brand-primary'}`}
       >
         <BookOpen className="w-4 h-4 md:hidden" />
         {t('home')}
-        <span className={`hidden md:block absolute -bottom-1 left-0 h-0.5 bg-[#10b981] transition-all group-hover:w-full ${isActive('/') ? 'w-full' : 'w-0'}`}></span>
+        <span className={`hidden md:block absolute -bottom-1 left-0 h-0.5 bg-brand-primary transition-all group-hover:w-full ${isActive('/') ? 'w-full' : 'w-0'}`}></span>
       </Link>
-      <Link 
-        to="/favorites" 
+      <Link
+        to="/favorites"
         onClick={() => setIsMenuOpen(false)}
-        className={`flex items-center gap-2 transition-colors relative group ${isActive('/favorites') ? 'text-[#10b981]' : 'text-slate-600 md:text-slate-500 hover:text-[#10b981]'}`}
+        className={`flex items-center gap-2 transition-colors relative group ${isActive('/favorites') ? 'text-brand-primary' : 'text-slate-600 md:text-slate-500 hover:text-brand-primary'}`}
       >
         <Heart className="w-4 h-4 md:hidden" />
         {t('favorites')}
-        <span className={`hidden md:block absolute -bottom-1 left-0 h-0.5 bg-[#10b981] transition-all group-hover:w-full ${isActive('/favorites') ? 'w-full' : 'w-0'}`}></span>
+        <span className={`hidden md:block absolute -bottom-1 left-0 h-0.5 bg-brand-primary transition-all group-hover:w-full ${isActive('/favorites') ? 'w-full' : 'w-0'}`}></span>
       </Link>
-      <Link 
-        to="/collection" 
+      <Link
+        to="/collection"
         onClick={() => setIsMenuOpen(false)}
-        className={`flex items-center gap-2 transition-colors relative group ${isActive('/collection') ? 'text-[#10b981]' : 'text-slate-600 md:text-slate-500 hover:text-[#10b981]'}`}
+        className={`flex items-center gap-2 transition-colors relative group ${isActive('/collection') ? 'text-brand-primary' : 'text-slate-600 md:text-slate-500 hover:text-brand-primary'}`}
       >
         <BookOpen className="w-4 h-4 md:hidden" />
         {t('myCollection')}
-        <span className={`hidden md:block absolute -bottom-1 left-0 h-0.5 bg-[#10b981] transition-all group-hover:w-full ${isActive('/collection') ? 'w-full' : 'w-0'}`}></span>
+        <span className={`hidden md:block absolute -bottom-1 left-0 h-0.5 bg-brand-primary transition-all group-hover:w-full ${isActive('/collection') ? 'w-full' : 'w-0'}`}></span>
       </Link>
-      <Link 
-        to="/history" 
+      <Link
+        to="/history"
         onClick={() => setIsMenuOpen(false)}
-        className={`flex items-center gap-2 transition-colors relative group ${isActive('/history') ? 'text-[#10b981]' : 'text-slate-600 md:text-slate-500 hover:text-[#10b981]'}`}
+        className={`flex items-center gap-2 transition-colors relative group ${isActive('/history') ? 'text-brand-primary' : 'text-slate-600 md:text-slate-500 hover:text-brand-primary'}`}
       >
         <History className="w-4 h-4 md:hidden" />
         {t('history')}
-        <span className={`hidden md:block absolute -bottom-1 left-0 h-0.5 bg-[#10b981] transition-all group-hover:w-full ${isActive('/history') ? 'w-full' : 'w-0'}`}></span>
+        <span className={`hidden md:block absolute -bottom-1 left-0 h-0.5 bg-brand-primary transition-all group-hover:w-full ${isActive('/history') ? 'w-full' : 'w-0'}`}></span>
       </Link>
     </>
   );
@@ -145,20 +144,20 @@ export default function Navbar() {
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 h-20 px-4 md:px-6 flex items-center justify-between bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="p-2 md:hidden text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
           >
             {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
-          
+
           <Link to="/" className="flex items-center gap-3 group cursor-pointer">
-            <div className="w-10 h-10 rounded-xl bg-[#10b981] flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-300">
+            <div className="w-10 h-10 rounded-xl bg-brand-primary flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-300">
               <BookOpen className="text-white w-6 h-6" />
             </div>
             <div className="flex flex-col">
               <span className="text-lg md:text-xl font-bold tracking-tight text-slate-800 leading-none">AlphaLibrary</span>
-              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#059669]">Web3 BookStore</span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-primary">Web3 BookStore</span>
             </div>
           </Link>
         </div>
@@ -169,38 +168,37 @@ export default function Navbar() {
 
         <div className="flex items-center gap-2 md:gap-4">
           <LanguageSwitcher />
-          
-          <div className="h-6 w-[1px] bg-slate-200 mx-1 hidden lg:block"></div>
+
+          <div className="h-6 w-px bg-slate-200 mx-1 hidden lg:block"></div>
 
           {user ? (
             <div className="flex items-center gap-2 md:gap-3">
-              <button 
+              <button
                 onClick={handleCheckin}
                 disabled={timeLeft > 0}
-                className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-xs md:text-sm transition-colors ${
-                  timeLeft > 0 
-                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
-                  : 'bg-[#f59e0b]/10 text-[#f59e0b] hover:bg-[#f59e0b]/20'
-                }`}
+                className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-xs md:text-sm transition-colors ${timeLeft > 0
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    : 'bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20'
+                  }`}
               >
                 <Gift className="w-4 h-4" />
                 <span className="hidden lg:inline">{timeLeft > 0 ? formatTimeLeft(timeLeft) : ' faucet'}</span>
-                {timeLeft > 0 && <span className="lg:hidden">{Math.floor(timeLeft/3600)}h</span>}
+                {timeLeft > 0 && <span className="lg:hidden">{Math.floor(timeLeft / 3600)}h</span>}
               </button>
-              
+
               <div className="flex items-center gap-2 bg-slate-50 px-2 md:px-3 py-1.5 rounded-lg border border-slate-200 max-w-[120px] md:max-w-none">
                 <UserIcon className="w-4 h-4 text-slate-400 shrink-0" />
                 <span className="text-xs md:text-sm font-semibold text-slate-700 truncate">{user.username}</span>
                 <button onClick={logout} className="ml-1 text-slate-400 hover:text-red-500">
-                  <LogOut className="w-3 h-3 md:w-4 h-4" />
+                  <LogOut className="w-4 h-4" />
                 </button>
               </div>
               <div className="scale-90 md:scale-100 origin-right">
-                <ConnectButton className="!bg-[#10b981] hover:!bg-[#059669] !rounded-lg !px-3 md:!px-4 !py-2 !text-[10px] md:!text-sm !font-semibold !transition-all !border-none !shadow-none" />
+                <ConnectButton className="bg-brand-primary hover:bg-brand-primary rounded-lg px-3 md:px-4 py-2 text-[10px] md:text-sm font-semibold transition-all border-none shadow-none" />
               </div>
             </div>
           ) : (
-            <button 
+            <button
               onClick={() => setShowAuth(true)}
               className="primary-button text-[10px] md:text-sm py-2 px-3 md:py-2 md:px-6"
             >
@@ -219,22 +217,21 @@ export default function Navbar() {
               <NavLinks />
             </div>
             {!user && (
-               <button 
-               onClick={() => { setShowAuth(true); setIsMenuOpen(false); }}
-               className="w-full primary-button py-4"
-             >
-               {t('login')}
-             </button>
+              <button
+                onClick={() => { setShowAuth(true); setIsMenuOpen(false); }}
+                className="w-full primary-button py-4"
+              >
+                {t('login')}
+              </button>
             )}
             {user && (
-              <button 
+              <button
                 onClick={() => { handleCheckin(); setIsMenuOpen(false); }}
                 disabled={timeLeft > 0}
-                className={`w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold transition-colors ${
-                  timeLeft > 0 
-                  ? 'bg-slate-100 text-slate-400' 
-                  : 'bg-[#f59e0b]/10 text-[#f59e0b]'
-                }`}
+                className={`w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold transition-colors ${timeLeft > 0
+                    ? 'bg-slate-100 text-slate-400'
+                    : 'bg-brand-primary/10 text-brand-primary'
+                  }`}
               >
                 <Gift className="w-5 h-5" />
                 {timeLeft > 0 ? `Faucet locked (${formatTimeLeft(timeLeft)})` : 'Faucet'}

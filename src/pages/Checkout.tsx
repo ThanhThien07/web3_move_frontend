@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useSuiClient, useSignAndExecuteTransaction, useCurrentAccount } from '@mysten/dapp-kit';
+import { useSignAndExecuteTransaction, useCurrentAccount } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
-import { BookOpen, ShieldCheck, Wallet, ArrowLeft, Loader2, CreditCard } from 'lucide-react';
+import { ShieldCheck, Wallet, ArrowLeft, Loader2, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../components/AuthContext';
 import { getPaymentConfig, MIST_PER_SUI } from '../lib/payment-config';
@@ -20,7 +20,6 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const account = useCurrentAccount();
-  const suiClient = useSuiClient();
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
 
   const [book, setBook] = useState<BookItem | null>(null);
@@ -119,7 +118,7 @@ export default function Checkout() {
     }
   };
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin w-10 h-10 text-[#10b981]" /></div>;
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin w-10 h-10 text-brand-primary" /></div>;
   if (!book) return <div className="text-center py-20">Sách không tồn tại</div>;
 
   const displayPrice = (Number(book.priceMist) / Number(MIST_PER_SUI)).toFixed(2);
@@ -133,7 +132,7 @@ export default function Checkout() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-2 space-y-6">
           <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm flex flex-col sm:flex-row gap-8">
-            <div className="w-full sm:w-48 aspect-[3/4] bg-slate-100 rounded-2xl overflow-hidden shadow-xl shrink-0 group">
+            <div className="w-full sm:w-48 aspect-3/4 bg-slate-100 rounded-2xl overflow-hidden shadow-xl shrink-0 group">
               <img src={book.coverUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={book.title} />
             </div>
             <div className="space-y-6">
@@ -142,18 +141,18 @@ export default function Checkout() {
                 <p className="text-slate-500 font-bold text-lg">{book.author}</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <span className="px-4 py-1.5 bg-[#10b981]/10 text-[#10b981] rounded-xl text-[10px] font-black uppercase tracking-widest">Web3 Edition</span>
+                <span className="px-4 py-1.5 bg-brand-primary/10 text-brand-primary rounded-xl text-[10px] font-black uppercase tracking-widest">Web3 Edition</span>
                 <span className="px-4 py-1.5 bg-slate-100 text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest">Digital Asset</span>
               </div>
               <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                 <p className="text-slate-500 text-xs font-black uppercase tracking-widest mb-2">Người bán (Seller Wallet)</p>
-                 <p className="text-[10px] font-mono font-bold text-slate-400 break-all">{book.owner_wallet}</p>
+                <p className="text-slate-500 text-xs font-black uppercase tracking-widest mb-2">Người bán (Seller Wallet)</p>
+                <p className="text-[10px] font-mono font-bold text-slate-400 break-all">{book.owner_wallet}</p>
               </div>
             </div>
           </div>
 
           <div className="bg-emerald-500/5 rounded-[2.5rem] p-8 border border-emerald-500/10 flex gap-6 items-start">
-            <ShieldCheck className="w-8 h-8 text-[#10b981] shrink-0" />
+            <ShieldCheck className="w-8 h-8 text-brand-primary shrink-0" />
             <div className="space-y-2">
               <h4 className="font-black text-slate-900">Bảo mật tuyệt đối</h4>
               <p className="text-sm text-slate-500 font-medium leading-relaxed">Giao dịch được thực hiện trực tiếp thông qua Smart Contract trên Sui Blockchain. Tiền của bạn sẽ được chuyển thẳng đến ví của người bán mà không thông qua trung gian.</p>
@@ -164,7 +163,7 @@ export default function Checkout() {
         <div className="space-y-6">
           <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-2xl shadow-slate-200/50 space-y-8 sticky top-24">
             <h3 className="text-xl font-black text-slate-900 uppercase tracking-widest">Hóa đơn chi tiết</h3>
-            
+
             <div className="space-y-4">
               <div className="flex justify-between text-slate-400 font-bold text-xs uppercase tracking-wider">
                 <span>Giá sản phẩm</span>
@@ -176,7 +175,7 @@ export default function Checkout() {
               </div>
               <div className="pt-6 border-t border-slate-100 flex justify-between items-center">
                 <span className="font-black text-slate-900 text-lg uppercase tracking-widest">Tổng cộng</span>
-                <span className="text-3xl font-black text-[#10b981]">{displayPrice} <span className="text-sm">SUI</span></span>
+                <span className="text-3xl font-black text-brand-primary">{displayPrice} <span className="text-sm">SUI</span></span>
               </div>
             </div>
 
@@ -187,11 +186,10 @@ export default function Checkout() {
                   <button
                     key={n.id}
                     onClick={() => setNetwork(n.id)}
-                    className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${
-                      network === n.id 
-                      ? 'border-[#10b981] bg-emerald-500/5 shadow-inner' 
-                      : 'border-slate-50 hover:border-slate-200 bg-slate-50/30'
-                    }`}
+                    className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${network === n.id
+                        ? 'border-brand-primary bg-brand-primary/5 shadow-inner'
+                        : 'border-slate-50 hover:border-slate-200 bg-slate-50/30'
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-2.5 h-2.5 rounded-full ${n.color} shadow-sm`}></div>
@@ -202,10 +200,10 @@ export default function Checkout() {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={handlePayment}
               disabled={paying}
-              className="w-full bg-[#10b981] hover:bg-[#059669] disabled:bg-slate-200 text-white py-5 rounded-2xl font-black shadow-xl shadow-[#10b981]/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3 group"
+              className="w-full bg-brand-primary hover:bg-brand-secondary disabled:bg-slate-200 text-white py-5 rounded-2xl font-black shadow-xl shadow-brand-primary/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3 group"
             >
               {paying ? (
                 <Loader2 className="w-6 h-6 animate-spin" />

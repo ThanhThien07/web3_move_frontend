@@ -20,7 +20,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
 
     const config = getPaymentConfig();
     const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-    
+
     try {
       const res = await fetch(`${config.booksApiBaseUrl}${endpoint}`, {
         method: 'POST',
@@ -51,7 +51,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
           <h2 className="text-2xl font-bold text-slate-800">
             {isLogin ? 'Đăng nhập' : 'Tạo tài khoản'}
           </h2>
-          <button 
+          <button
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 transition-colors"
           >
@@ -67,7 +67,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
               required
               value={username}
               onChange={e => setUsername(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#10b981] focus:border-transparent outline-none transition-all text-slate-800 bg-white"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all text-slate-800 bg-white"
               placeholder="Nhập tên đăng nhập"
             />
           </div>
@@ -78,7 +78,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
               required
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#10b981] focus:border-transparent outline-none transition-all text-slate-800 bg-white"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all text-slate-800 bg-white"
               placeholder="••••••••"
             />
           </div>
@@ -94,10 +94,10 @@ export default function AuthModal({ onClose }: AuthModalProps) {
 
         <div className="mt-6 text-center text-sm text-slate-500">
           {isLogin ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? '}
-          <button 
+          <button
             type="button"
             onClick={() => setIsLogin(!isLogin)}
-            className="text-[#10b981] font-semibold hover:underline"
+            className="text-brand-primary font-semibold hover:underline"
           >
             {isLogin ? 'Đăng ký ngay' : 'Đăng nhập'}
           </button>

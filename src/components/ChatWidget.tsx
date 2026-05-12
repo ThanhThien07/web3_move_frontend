@@ -16,7 +16,7 @@ export default function ChatWidget() {
   const API_URL = 'http://localhost:5000'; // Admin API
 
   useEffect(() => {
-    (window as any).openChat = (book?: any) => {
+    (window as any).openChat = () => {
       setIsOpen(true);
     };
   }, []);
@@ -55,7 +55,7 @@ export default function ChatWidget() {
     const content = newMessage.trim();
     setNewMessage('');
     setSending(true);
-    
+
     try {
       const res = await fetch(`${API_URL}/api/chats/send`, {
         method: 'POST',
@@ -81,7 +81,7 @@ export default function ChatWidget() {
     return messages.reduce((acc: any[], msg: any) => {
       const lastGroup = acc[acc.length - 1];
       const msgDate = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      
+
       if (lastGroup && lastGroup.isAdmin === msg.isAdmin && lastGroup.time === msgDate) {
         lastGroup.messages.push(msg.content);
       } else {
@@ -96,19 +96,19 @@ export default function ChatWidget() {
   }, [messages]);
 
   if (!isOpen) return (
-    <button 
+    <button
       onClick={() => setIsOpen(true)}
-      className="fixed bottom-8 right-8 w-16 h-16 bg-[#10b981] text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-[100] group"
+      className="fixed bottom-8 right-8 w-16 h-16 bg-brand-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-100 group"
     >
-      <div className="absolute inset-0 bg-[#10b981] rounded-full animate-ping opacity-20 group-hover:opacity-40 transition-opacity"></div>
+      <div className="absolute inset-0 bg-brand-primary rounded-full animate-ping opacity-20 group-hover:opacity-40 transition-opacity"></div>
       <MessageCircle className="w-8 h-8 relative z-10" />
     </button>
   );
 
   return (
-    <div className="fixed bottom-8 right-8 w-[24rem] h-[34rem] bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 flex flex-col z-[110] animate-in slide-in-from-bottom-10 fade-in duration-500 overflow-hidden">
+    <div className="fixed bottom-8 right-8 w-[24rem] h-136 bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 flex flex-col z-110 animate-in slide-in-from-bottom-10 fade-in duration-500 overflow-hidden">
       {/* Header */}
-      <div className="p-6 bg-[#10b981] text-white flex items-center justify-between shadow-lg shadow-[#10b981]/20">
+      <div className="p-6 bg-brand-primary text-white flex items-center justify-between shadow-lg shadow-brand-primary/20">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-lg rotate-3">
             AL
@@ -127,10 +127,10 @@ export default function ChatWidget() {
       </div>
 
       {/* Messages */}
-      <div className="flex-grow overflow-y-auto p-6 space-y-6 bg-slate-50/30">
+      <div className="grow overflow-y-auto p-6 space-y-6 bg-slate-50/30">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-8">
-            <div className="w-20 h-20 rounded-[2rem] bg-emerald-50 text-[#10b981] flex items-center justify-center mb-6 rotate-6">
+            <div className="w-20 h-20 rounded-4xl bg-emerald-50 text-brand-primary flex items-center justify-center mb-6 rotate-6">
               <MessageCircle className="w-10 h-10" />
             </div>
             <h5 className="text-slate-800 font-black mb-2">Xin chào!</h5>
@@ -142,9 +142,9 @@ export default function ChatWidget() {
               {group.messages.map((text: string, j: number) => (
                 <div key={j} className={`
                   max-w-[85%] p-3.5 text-sm font-medium shadow-sm transition-all
-                  ${group.isAdmin 
-                    ? 'bg-white text-slate-700 border border-slate-100 rounded-2xl rounded-tl-none first:rounded-tl-none' 
-                    : 'bg-[#10b981] text-white rounded-2xl rounded-tr-none first:rounded-tr-none'}
+                  ${group.isAdmin
+                    ? 'bg-white text-slate-700 border border-slate-100 rounded-2xl rounded-tl-none first:rounded-tl-none'
+                    : 'bg-brand-primary text-white rounded-2xl rounded-tr-none first:rounded-tr-none'}
                   ${j > 0 ? (group.isAdmin ? 'rounded-tl-2xl' : 'rounded-tr-2xl') : ''}
                 `}>
                   {text}
@@ -163,17 +163,17 @@ export default function ChatWidget() {
       <div className="p-6 bg-white border-t border-slate-50">
         {user ? (
           <form onSubmit={handleSend} className="flex gap-3">
-            <input 
+            <input
               type="text"
               placeholder={t('typeMessage')}
-              className="flex-grow bg-slate-50 border-none rounded-2xl py-4 px-5 text-sm focus:ring-2 focus:ring-[#10b981]/20 transition-all placeholder:text-slate-400"
+              className="grow bg-slate-50 border-none rounded-2xl py-4 px-5 text-sm focus:ring-2 focus:ring-brand-primary/20 transition-all placeholder:text-slate-400"
               value={newMessage}
               onChange={e => setNewMessage(e.target.value)}
             />
-            <button 
+            <button
               type="submit"
               disabled={sending || !newMessage.trim()}
-              className="w-14 h-14 bg-[#10b981] text-white rounded-2xl flex items-center justify-center shadow-lg shadow-[#10b981]/20 active:scale-95 disabled:opacity-50 transition-all"
+              className="w-14 h-14 bg-brand-primary text-white rounded-2xl flex items-center justify-center shadow-lg shadow-brand-primary/20 active:scale-95 disabled:opacity-50 transition-all"
             >
               {sending ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
             </button>
