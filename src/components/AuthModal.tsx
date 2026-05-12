@@ -19,6 +19,8 @@ export default function AuthModal({ onClose }: AuthModalProps) {
     setLoading(true);
 
     const config = getPaymentConfig();
+    const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+    
     try {
       const res = await fetch(`${config.booksApiBaseUrl}${endpoint}`, {
         method: 'POST',
