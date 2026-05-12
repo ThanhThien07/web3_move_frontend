@@ -55,7 +55,7 @@ export default function LibraryGrid({ onSelectBook }: LibraryGridProps) {
     setLoading(true);
     setError(null);
     try {
-      const result = await searchBooks('', paymentConfig);
+      const result = await searchBooks('');
       setBooks(result);
       if (result.length === 0) setError(t('noBooks'));
     } catch (err) {
