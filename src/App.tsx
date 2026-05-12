@@ -6,6 +6,7 @@ import '@mysten/dapp-kit/dist/index.css';
 
 import Navbar from './components/Navbar';
 import { AuthProvider } from './components/AuthContext';
+import { I18nProvider, useI18n } from './i18n';
 import Home from './pages/Home';
 import MyCollection from './pages/MyCollection';
 import Checkout from './pages/Checkout';
@@ -20,38 +21,47 @@ const { networkConfig } = createNetworkConfig({
 
 const queryClient = new QueryClient();
 
+function AppContent() {
+  const { t } = useI18n();
+  return (
+    <div className="min-h-screen bg-[#f8fafc]">
+      <Toaster position="top-right" richColors />
+      <Navbar />
+      
+      <main className="max-w-7xl mx-auto px-6 pt-24 pb-24 min-h-[80vh]">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/collection" element={<MyCollection />} />
+          <Route path="/favorites" element={<Favorites />} />
+          <Route path="/history" element={<PurchaseHistory />} />
+          <Route path="/checkout/:id" element={<Checkout />} />
+        </Routes>
+      </main>
+
+      <footer className="pt-10 pb-10 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6 px-6 max-w-7xl mx-auto text-slate-500 text-sm">
+        <p>{t('footerText')} Phong cách Alphabooks.</p>
+        <div className="flex items-center gap-8">
+          <a href="#" className="hover:text-slate-800 transition-colors">Privacy</a>
+          <a href="#" className="hover:text-slate-800 transition-colors">Terms</a>
+          <a href="#" className="hover:text-slate-800 transition-colors">Smart Contract</a>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <SuiClientProvider networks={networkConfig} defaultNetwork="testnet">
         <WalletProvider autoConnect>
-          <AuthProvider>
-            <BrowserRouter>
-              <div className="min-h-screen bg-[#f8fafc]">
-                <Toaster position="top-right" richColors />
-                <Navbar />
-                
-                <main className="max-w-7xl mx-auto px-6 pt-24 pb-24 min-h-[80vh]">
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/collection" element={<MyCollection />} />
-                    <Route path="/favorites" element={<Favorites />} />
-                    <Route path="/history" element={<PurchaseHistory />} />
-                    <Route path="/checkout/:id" element={<Checkout />} />
-                  </Routes>
-                </main>
-
-                <footer className="pt-10 pb-10 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6 px-6 max-w-7xl mx-auto text-slate-500 text-sm">
-                  <p>© 2026 ITC Web3 Decentralized Library. Phong cách Alphabooks.</p>
-                  <div className="flex items-center gap-8">
-                    <a href="#" className="hover:text-slate-800 transition-colors">Privacy</a>
-                    <a href="#" className="hover:text-slate-800 transition-colors">Terms</a>
-                    <a href="#" className="hover:text-slate-800 transition-colors">Smart Contract</a>
-                  </div>
-                </footer>
-              </div>
-            </BrowserRouter>
-          </AuthProvider>
+          <I18nProvider>
+            <AuthProvider>
+              <BrowserRouter>
+                <AppContent />
+              </BrowserRouter>
+            </AuthProvider>
+          </I18nProvider>
         </WalletProvider>
       </SuiClientProvider>
     </QueryClientProvider>

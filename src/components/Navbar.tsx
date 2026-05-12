@@ -1,16 +1,38 @@
 import { useState, useEffect } from 'react';
 import { ConnectButton } from '@mysten/dapp-kit';
-import { BookOpen, Search, Gift, LogOut, User as UserIcon, Heart, Menu, X, History } from 'lucide-react';
+import { BookOpen, Search, Gift, LogOut, User as UserIcon, Heart, Menu, X, History, Globe } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import { useI18n } from '../i18n';
 import AuthModal from './AuthModal';
 import { getPaymentConfig } from '../lib/payment-config';
 import { toast } from 'sonner';
+
+function LanguageSwitcher() {
+  const { lang, setLang } = useI18n();
+  return (
+    <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 p-0.5 rounded-lg shadow-sm scale-90 md:scale-100">
+      <button 
+        onClick={() => setLang('en')}
+        className={`px-2 py-0.5 rounded text-[9px] font-black transition-all ${lang === 'en' ? 'bg-[#10b981] text-white' : 'text-slate-400'}`}
+      >
+        EN
+      </button>
+      <button 
+        onClick={() => setLang('vi')}
+        className={`px-2 py-0.5 rounded text-[9px] font-black transition-all ${lang === 'vi' ? 'bg-[#10b981] text-white' : 'text-slate-400'}`}
+      >
+        VI
+      </button>
+    </div>
+  );
+}
 
 export default function Navbar() {
   const [showAuth, setShowAuth] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, login: updateAuthUser, logout } = useAuth();
+  const { t } = useI18n();
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const location = useLocation();
 
@@ -23,7 +45,6 @@ export default function Navbar() {
         const todayStr = now.toISOString().split('T')[0];
         
         if (user.last_checkin === todayStr) {
-          // Calculate ms until tomorrow
           const tomorrow = new Date(now);
           tomorrow.setDate(tomorrow.getDate() + 1);
           tomorrow.setHours(0, 0, 0, 0);
@@ -87,7 +108,7 @@ export default function Navbar() {
         className={`flex items-center gap-2 transition-colors relative group ${isActive('/') ? 'text-[#10b981]' : 'text-slate-600 md:text-slate-800 hover:text-[#10b981]'}`}
       >
         <BookOpen className="w-4 h-4 md:hidden" />
-        Nhà sách
+        {t('home')}
         <span className={`hidden md:block absolute -bottom-1 left-0 h-0.5 bg-[#10b981] transition-all group-hover:w-full ${isActive('/') ? 'w-full' : 'w-0'}`}></span>
       </Link>
       <Link 
@@ -96,7 +117,7 @@ export default function Navbar() {
         className={`flex items-center gap-2 transition-colors relative group ${isActive('/favorites') ? 'text-[#10b981]' : 'text-slate-600 md:text-slate-500 hover:text-[#10b981]'}`}
       >
         <Heart className="w-4 h-4 md:hidden" />
-        Yêu thích
+        {t('favorites')}
         <span className={`hidden md:block absolute -bottom-1 left-0 h-0.5 bg-[#10b981] transition-all group-hover:w-full ${isActive('/favorites') ? 'w-full' : 'w-0'}`}></span>
       </Link>
       <Link 
@@ -105,7 +126,7 @@ export default function Navbar() {
         className={`flex items-center gap-2 transition-colors relative group ${isActive('/collection') ? 'text-[#10b981]' : 'text-slate-600 md:text-slate-500 hover:text-[#10b981]'}`}
       >
         <BookOpen className="w-4 h-4 md:hidden" />
-        Tủ sách
+        {t('myCollection')}
         <span className={`hidden md:block absolute -bottom-1 left-0 h-0.5 bg-[#10b981] transition-all group-hover:w-full ${isActive('/collection') ? 'w-full' : 'w-0'}`}></span>
       </Link>
       <Link 
@@ -114,7 +135,7 @@ export default function Navbar() {
         className={`flex items-center gap-2 transition-colors relative group ${isActive('/history') ? 'text-[#10b981]' : 'text-slate-600 md:text-slate-500 hover:text-[#10b981]'}`}
       >
         <History className="w-4 h-4 md:hidden" />
-        Lịch sử
+        {t('history')}
         <span className={`hidden md:block absolute -bottom-1 left-0 h-0.5 bg-[#10b981] transition-all group-hover:w-full ${isActive('/history') ? 'w-full' : 'w-0'}`}></span>
       </Link>
     </>
@@ -147,9 +168,7 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
-          <button className="p-2 text-slate-500 hover:text-[#10b981] transition-colors rounded-full hover:bg-slate-50 hidden sm:block">
-            <Search className="w-5 h-5" />
-          </button>
+          <LanguageSwitcher />
           
           <div className="h-6 w-[1px] bg-slate-200 mx-1 hidden lg:block"></div>
 
@@ -165,7 +184,7 @@ export default function Navbar() {
                 }`}
               >
                 <Gift className="w-4 h-4" />
-                <span className="hidden lg:inline">{timeLeft > 0 ? formatTimeLeft(timeLeft) : 'Điểm danh SUI'}</span>
+                <span className="hidden lg:inline">{timeLeft > 0 ? formatTimeLeft(timeLeft) : ' faucet'}</span>
                 {timeLeft > 0 && <span className="lg:hidden">{Math.floor(timeLeft/3600)}h</span>}
               </button>
               
@@ -185,7 +204,7 @@ export default function Navbar() {
               onClick={() => setShowAuth(true)}
               className="primary-button text-[10px] md:text-sm py-2 px-3 md:py-2 md:px-6"
             >
-              Đăng nhập
+              {t('login')}
             </button>
           )}
         </div>
@@ -204,7 +223,7 @@ export default function Navbar() {
                onClick={() => { setShowAuth(true); setIsMenuOpen(false); }}
                className="w-full primary-button py-4"
              >
-               Đăng nhập / Đăng ký
+               {t('login')}
              </button>
             )}
             {user && (
@@ -218,7 +237,7 @@ export default function Navbar() {
                 }`}
               >
                 <Gift className="w-5 h-5" />
-                {timeLeft > 0 ? `Đã điểm danh (${formatTimeLeft(timeLeft)})` : 'Điểm danh nhận SUI Miễn phí'}
+                {timeLeft > 0 ? `Faucet locked (${formatTimeLeft(timeLeft)})` : 'Faucet'}
               </button>
             )}
           </div>
