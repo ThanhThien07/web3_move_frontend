@@ -6,6 +6,7 @@ export interface User {
   username: string;
   wallet_address?: string;
   favorites?: string[];
+  last_checkin?: string | null;
 }
 
 interface AuthContextType {

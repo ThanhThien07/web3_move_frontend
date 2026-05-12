@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
+import { getPaymentConfig } from '../lib/payment-config';
 
 interface AuthModalProps {
   onClose: () => void;
@@ -17,10 +18,9 @@ export default function AuthModal({ onClose }: AuthModalProps) {
     e.preventDefault();
     setLoading(true);
 
-    const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-    
+    const config = getPaymentConfig();
     try {
-      const res = await fetch(`http://localhost:3001${endpoint}`, {
+      const res = await fetch(`${config.booksApiBaseUrl}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),

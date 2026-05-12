@@ -131,6 +131,15 @@ function WalletStatus() {
 							</button>
 						))}
 					</div>
+
+					<div className="mt-6 pt-6 border-t border-slate-100">
+						<div className="rounded-xl bg-slate-50 p-4 border border-slate-100">
+							<p className="text-[11px] text-slate-500 leading-relaxed">
+								<span className="font-bold text-slate-700 block mb-1">💡 How to add more accounts?</span>
+								Please open your <b>Sui Wallet extension</b> and click "Add Account" there. New accounts will automatically appear in this list.
+							</p>
+						</div>
+					</div>
 				</div>
 			)}
 

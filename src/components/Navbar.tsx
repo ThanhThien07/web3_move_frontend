@@ -4,27 +4,36 @@ import { BookOpen, Search, Gift, LogOut, User as UserIcon, Heart, Menu, X, Histo
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import AuthModal from './AuthModal';
+import { getPaymentConfig } from '../lib/payment-config';
 import { toast } from 'sonner';
 
 export default function Navbar() {
   const [showAuth, setShowAuth] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, login: updateAuthUser, logout } = useAuth();
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const location = useLocation();
 
   // Load and sync countdown
   useEffect(() => {
     const checkCountdown = () => {
-      const lastCheckin = localStorage.getItem(`last_checkin_${user?.username}`);
-      if (lastCheckin) {
-        const diff = Date.now() - parseInt(lastCheckin);
-        const remaining = 24 * 60 * 60 * 1000 - diff;
-        if (remaining > 0) {
+      if (user?.last_checkin) {
+        const lastCheckinDate = new Date(user.last_checkin).getTime();
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        
+        if (user.last_checkin === todayStr) {
+          // Calculate ms until tomorrow
+          const tomorrow = new Date(now);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          tomorrow.setHours(0, 0, 0, 0);
+          const remaining = tomorrow.getTime() - now.getTime();
           setTimeLeft(Math.floor(remaining / 1000));
         } else {
           setTimeLeft(0);
         }
+      } else {
+        setTimeLeft(0);
       }
     };
 
@@ -33,20 +42,32 @@ export default function Navbar() {
     return () => clearInterval(timer);
   }, [user]);
 
-  const handleCheckin = () => {
+  const handleCheckin = async () => {
     if (!user) {
       toast.error('Vui lòng đăng nhập để điểm danh');
       return setShowAuth(true);
     }
-    
-    toast.info('Bạn sẽ được chuyển hướng. Vui lòng chọn mạng DEVNET trong ví để nhận SUI.', {
-      duration: 5000,
-    });
 
-    localStorage.setItem(`last_checkin_${user.username}`, Date.now().toString());
-    setTimeout(() => {
-      window.open('https://faucet.sui.io/', '_blank');
-    }, 2000);
+    const config = getPaymentConfig();
+    try {
+      const res = await fetch(`${config.booksApiBaseUrl}/api/faucet/checkin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user.username })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        toast.success(data.message);
+        if (data.user) {
+          updateAuthUser(data.user);
+        }
+      } else {
+        toast.error(data.error || 'Lỗi điểm danh');
+      }
+    } catch (err) {
+      toast.error('Không thể kết nối máy chủ để điểm danh');
+    }
   };
 
   const formatTimeLeft = (seconds: number) => {

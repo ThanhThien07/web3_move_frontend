@@ -49,7 +49,7 @@ export function getPaymentConfig(): PaymentConfig {
 		coinType,
 		tokenName,
 		defaultBookPriceMist: parsePriceToMist(readEnv('VITE_DEFAULT_BOOK_PRICE')),
-		booksApiBaseUrl: readEnv('VITE_BOOKS_API_BASE_URL'),
-		fulfillmentApiBaseUrl: readEnv('VITE_FULFILLMENT_API_BASE_URL'),
+		booksApiBaseUrl: readEnv('VITE_BOOKS_API_BASE_URL') || 'http://localhost:3001',
+		fulfillmentApiBaseUrl: readEnv('VITE_FULFILLMENT_API_BASE_URL') || 'http://localhost:3001',
 	};
 }
