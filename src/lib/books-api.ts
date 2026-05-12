@@ -48,11 +48,19 @@ const MOCK_BOOKS: BookItem[] = [
 export async function searchBooks(query: string = ''): Promise<BookItem[]> {
 	const config = getPaymentConfig();
 	
+	// If the URL contains "localhost" and we are in production, skip and use MOCK
+	const isProd = import.meta.env.PROD;
+	const isLocalUrl = config.booksApiBaseUrl.includes('localhost') || config.booksApiBaseUrl.includes('127.0.0.1');
+
+	if (isProd && isLocalUrl) {
+		console.warn('Production detected but API URL is localhost. Falling back to Demo Mode.');
+		return filterBooks(MOCK_BOOKS, query);
+	}
+
 	try {
-		// Attempt to fetch from real backend with a short timeout
 		const res = await fetch(`${config.booksApiBaseUrl}/api/books`, {
-			// @ts-ignore - signal: AbortSignal.timeout is supported in modern browsers
-			signal: AbortSignal.timeout ? AbortSignal.timeout(3000) : undefined
+			// @ts-ignore
+			signal: AbortSignal.timeout ? AbortSignal.timeout(4000) : undefined
 		});
 		
 		if (!res.ok) throw new Error('Backend server is not responding');
@@ -69,20 +77,17 @@ export async function searchBooks(query: string = ''): Promise<BookItem[]> {
 			owner_wallet: item.owner_wallet || 'Admin'
 		}));
 
-		if (query) {
-			return mapped.filter((b: BookItem) => 
-				b.title.toLowerCase().includes(query.toLowerCase()) || 
-				b.author.toLowerCase().includes(query.toLowerCase())
-			);
-		}
-		return mapped;
+		return filterBooks(mapped, query);
 	} catch (err) {
 		console.warn('Backend connection failed, using premium mock data.');
-		// Return demo books on failure so the UI stays populated
-		const filteredMock = MOCK_BOOKS.filter((b: BookItem) => 
-			b.title.toLowerCase().includes(query.toLowerCase()) || 
-			b.author.toLowerCase().includes(query.toLowerCase())
-		);
-		return filteredMock;
+		return filterBooks(MOCK_BOOKS, query);
 	}
+}
+
+function filterBooks(books: BookItem[], query: string): BookItem[] {
+	if (!query) return books;
+	return books.filter((b: BookItem) => 
+		b.title.toLowerCase().includes(query.toLowerCase()) || 
+		b.author.toLowerCase().includes(query.toLowerCase())
+	);
 }
