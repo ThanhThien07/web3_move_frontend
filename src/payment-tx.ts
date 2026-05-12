@@ -1,9 +1,8 @@
-import type { SuiClientTypes } from '@mysten/sui/client';
-import type { CoinStruct } from '@mysten/sui/jsonRpc';
+import { SuiClient, type CoinStruct } from '@mysten/sui/client';
 import { Transaction } from '@mysten/sui/transactions';
 import { DEFAULT_SUI_COIN_TYPE, type PaymentConfig } from './payment-config';
 
-type ClientType = SuiClientTypes.TransportMethods;
+type ClientType = SuiClient;
 
 const PAYMENT_GAS_BUDGET = 20_000_000n;
 
@@ -16,13 +15,13 @@ async function fetchAllTokenCoins(
 	let cursor: string | null = null;
 
 	while (true) {
-		const page = await client.listCoins({ owner, coinType, cursor, limit: 100 });
-		coins.push(...(page.objects as any));
-		if (!page.hasNextPage || !page.cursor) break;
-		cursor = page.cursor;
+		const page = await client.getCoins({ owner, coinType, cursor, limit: 100 });
+		coins.push(...page.data);
+		if (!page.hasNextPage || !page.nextCursor) break;
+		cursor = page.nextCursor;
 	}
 
-	return coins as any;
+	return coins;
 }
 
 export async function buildPaymentTx(

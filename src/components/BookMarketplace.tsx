@@ -1,5 +1,5 @@
-import { useMemo, useState, type FormEvent } from 'react';
-import { useCurrentAccount, useCurrentClient, useDAppKit } from '@mysten/dapp-kit-react';
+import { useMemo, useState, useEffect, type FormEvent } from 'react';
+import { useCurrentAccount, useSuiClient, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { type BookItem, searchBooks } from '../books-api';
 import { getPaymentConfig, MIST_PER_SUI } from '../payment-config';
 import { buildPaymentTx, parsePaymentResult } from '../payment-tx';
@@ -39,8 +39,8 @@ function saveRecentPurchases(records: PurchaseRecord[]) {
 
 export default function BookMarketplace() {
 	const account = useCurrentAccount();
-	const client = useCurrentClient();
-	const dAppKit = useDAppKit();
+	const client = useSuiClient();
+	const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
 
 	const [query, setQuery] = useState('blockchain');
 	const [loading, setLoading] = useState(false);
@@ -64,6 +64,12 @@ export default function BookMarketplace() {
 			return 'Missing or invalid payment configuration.';
 		}
 		return null;
+	}, [paymentConfig]);
+
+	useEffect(() => {
+		if (paymentConfig) {
+			handleSearch();
+		}
 	}, [paymentConfig]);
 
 	async function handleSearch(event?: FormEvent) {
@@ -105,20 +111,25 @@ export default function BookMarketplace() {
 				account.address,
 				book.id
 			);
-			const result = await dAppKit.signAndExecuteTransaction({ transaction: tx });
-			const parsed = parsePaymentResult(result);
-			await client.waitForTransaction({ result });
+			
+			const result = await signAndExecuteTransaction({ 
+				transaction: tx,
+			});
+			
+			const digest = result.digest;
+			await client.waitForTransaction({ digest });
+			
 			const fulfillment = await requestBookFulfillment({
 				config,
 				book,
 				walletAddress: account.address,
-				digest: parsed.digest,
+				digest,
 			});
 
 			const record: PurchaseRecord = {
 				bookId: book.id,
 				title: book.title,
-				digest: parsed.digest,
+				digest: digest,
 				accessUrl: fulfillment.accessUrl,
 				fulfillmentMessage: fulfillment.message,
 				createdAt: new Date().toISOString(),
