@@ -28,10 +28,15 @@ const translations: Translations = {
   itemsPerPage: { en: 'Items per page', vi: 'Số bản ghi mỗi trang' },
   page: { en: 'Page', vi: 'Trang' },
   chatWithOwner: { en: 'Consultation', vi: 'Tư vấn ngay' },
+  chat: { en: 'Chat', vi: 'Chat' },
   owner: { en: 'Seller', vi: 'Người bán' },
   typeMessage: { en: 'Type a message...', vi: 'Nhập tin nhắn...' },
   send: { en: 'Send', vi: 'Gửi' },
   loginToChat: { en: 'Please login to chat', vi: 'Vui lòng đăng nhập để chat' },
+  discover: { en: 'Discover', vi: 'Khám phá' },
+  price: { en: 'Price', vi: 'Giá bán' },
+  fetchError: { en: 'Failed to fetch books', vi: 'Lỗi tải danh sách sách' },
+  searchPlaceholder: { en: 'Search for books or authors...', vi: 'Tìm tên sách hoặc tác giả...' },
 };
 
 interface I18nContextType {

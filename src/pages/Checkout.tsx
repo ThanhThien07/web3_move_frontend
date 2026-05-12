@@ -30,41 +30,57 @@ export default function Checkout() {
   const paymentConfig = getPaymentConfig();
 
   useEffect(() => {
-    // ƯU TIÊN LẤY DỮ LIỆU TỪ FRONTEND ĐỂ HIỂN THỊ NGAY LẬP TỨC
-    const found = localBooks.find((b: any) => b.id === id);
-    if (found) {
-      setBook({
-        id: found.id,
-        title: found.title,
-        author: found.author,
-        coverUrl: found.coverUrl,
-        priceMist: BigInt(found.priceMist),
-        owner_wallet: found.owner_wallet || 'Admin'
-      });
-      setLoading(false);
-    } else {
-      // Nếu không có trong local, thử gọi API (phần này để dự phòng)
-      fetch(`${paymentConfig.booksApiBaseUrl}/api/books`)
-        .then(res => res.json())
-        .then(data => {
-          const items = Array.isArray(data) ? data : (data.items || []);
-          const serverFound = items.find((b: any) => b.id === id);
-          if (serverFound) {
+    setLoading(true);
+    // 🚀 LUÔN LẤY DỮ LIỆU MỚI NHẤT TỪ SERVER ĐỂ ĐẢM BẢO ĐỒNG BỘ VỚI ADMIN
+    fetch(`${paymentConfig.booksApiBaseUrl}/api/books`)
+      .then(res => res.json())
+      .then(data => {
+        const items = Array.isArray(data) ? data : (data.items || []);
+        const serverFound = items.find((b: any) => b.id === id);
+        
+        if (serverFound) {
+          setBook({
+            id: serverFound.id,
+            title: serverFound.title,
+            author: serverFound.author,
+            coverUrl: serverFound.cover_url || serverFound.coverUrl,
+            priceMist: BigInt(serverFound.price_mist || serverFound.priceMist || '0'),
+            owner_wallet: serverFound.owner_wallet || serverFound.ownerWallet || 'Admin'
+          });
+        } else {
+          // Fallback sang local nếu server không có (cho dev)
+          const found = localBooks.find((b: any) => b.id === id);
+          if (found) {
             setBook({
-              id: serverFound.id,
-              title: serverFound.title,
-              author: serverFound.author,
-              coverUrl: serverFound.cover_url,
-              priceMist: BigInt(serverFound.price_mist),
-              owner_wallet: serverFound.owner_wallet
+              id: found.id,
+              title: found.title,
+              author: found.author,
+              coverUrl: found.coverUrl,
+              priceMist: BigInt(found.priceMist),
+              owner_wallet: found.owner_wallet || 'Admin'
             });
           } else {
             toast.error('Không tìm thấy sách');
           }
-        })
-        .catch(() => toast.error('Lỗi tải dữ liệu từ server'))
-        .finally(() => setLoading(false));
-    }
+        }
+      })
+      .catch(() => {
+        // Nếu lỗi API, dùng local làm dự phòng cuối cùng
+        const found = localBooks.find((b: any) => b.id === id);
+        if (found) {
+          setBook({
+            id: found.id,
+            title: found.title,
+            author: found.author,
+            coverUrl: found.coverUrl,
+            priceMist: BigInt(found.priceMist),
+            owner_wallet: found.owner_wallet || 'Admin'
+          });
+        } else {
+          toast.error('Lỗi kết nối server');
+        }
+      })
+      .finally(() => setLoading(false));
   }, [id, paymentConfig.booksApiBaseUrl]);
 
   const handlePayment = async () => {

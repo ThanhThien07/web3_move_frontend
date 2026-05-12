@@ -3,6 +3,7 @@ import { useI18n } from '../i18n';
 import { useAuth } from './AuthContext';
 import { X, Send, Loader2, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { getPaymentConfig } from '../lib/payment-config';
 
 export default function ChatWidget() {
   const { t } = useI18n();
@@ -13,7 +14,8 @@ export default function ChatWidget() {
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const API_URL = 'http://localhost:5000'; // Admin API
+  const config = getPaymentConfig();
+  const API_URL = config.booksApiBaseUrl; // Sử dụng cổng 3001 từ config
 
   useEffect(() => {
     (window as any).openChat = () => {
@@ -40,9 +42,10 @@ export default function ChatWidget() {
   const fetchMessages = async () => {
     if (!user) return;
     try {
-      const res = await fetch(`${API_URL}/api/chats/${user.username}`);
+      // 🚀 Endpoint mới đã đồng bộ với Backend
+      const res = await fetch(`${API_URL}/api/chat/messages/${user.username}`);
       const data = await res.json();
-      setMessages(data.messages || []);
+      setMessages(data || []);
     } catch (err) {
       console.error('Failed to fetch messages');
     }
@@ -57,12 +60,12 @@ export default function ChatWidget() {
     setSending(true);
 
     try {
-      const res = await fetch(`${API_URL}/api/chats/send`, {
+      const res = await fetch(`${API_URL}/api/chat/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user.username,
-          userName: user.username,
+          sessionId: user.username,
+          customerName: user.username,
           content,
           isAdmin: false
         })

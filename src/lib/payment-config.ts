@@ -8,13 +8,15 @@ export interface PaymentConfig {
   booksApiBaseUrl: string;
 }
 
-// Cấu hình mạng lưới (ưu tiên Testnet cho phát triển)
+// 🚀 LẤY ĐỊA CHỈ API TỪ BIẾN MÔI TRƯỜNG (Dành cho Netlify)
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 const DEVNET_CONFIG: PaymentConfig = {
   packageId: '0x...', 
   treasuryId: '0x...',
   adminId: '0x...',
   receiver: '0x8898f0927e53a2512f458e0a811802e334a179379860b7b15d0257e1d51a95e0',
-  booksApiBaseUrl: 'http://localhost:3001' // 🚀 Backend cho Frontend (Cổng 3001)
+  booksApiBaseUrl: API_BASE_URL
 };
 
 const TESTNET_CONFIG: PaymentConfig = {
@@ -22,10 +24,9 @@ const TESTNET_CONFIG: PaymentConfig = {
   treasuryId: '0x...',
   adminId: '0x...',
   receiver: '0x8898f0927e53a2512f458e0a811802e334a179379860b7b15d0257e1d51a95e0',
-  booksApiBaseUrl: 'http://localhost:3001' // 🚀 Backend cho Frontend (Cổng 3001)
+  booksApiBaseUrl: API_BASE_URL
 };
 
 export const getPaymentConfig = (): PaymentConfig => {
-  // Bạn có thể đổi sang DEVNET_CONFIG nếu muốn thử nghiệm devnet
   return TESTNET_CONFIG;
 };

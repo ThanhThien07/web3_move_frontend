@@ -10,10 +10,11 @@ export interface BookItem {
 	owner_wallet: string;
 }
 
-export async function searchBooks(query: string = ''): Promise<BookItem[]> {
+// 🚀 ĐỔI TÊN THÀNH fetchBooks ĐỂ PHÙ HỢP VỚI FRONTEND
+export async function fetchBooks(): Promise<BookItem[]> {
 	const config = getPaymentConfig();
 	
-	// Khởi tạo với dữ liệu local từ Frontend
+	// Khởi tạo với dữ liệu local từ Frontend (đảm bảo web luôn có nội dung hiện ra ngay)
 	let finalBooks: BookItem[] = localBooks.map((item: any) => ({
 		id: item.id,
 		title: item.title,
@@ -25,10 +26,7 @@ export async function searchBooks(query: string = ''): Promise<BookItem[]> {
 
 	try {
 		// Thử lấy dữ liệu mới nhất từ Admin server (nếu có)
-		const res = await fetch(`${config.booksApiBaseUrl}/api/books`, {
-			// @ts-ignore
-			signal: AbortSignal.timeout ? AbortSignal.timeout(2000) : undefined
-		});
+		const res = await fetch(`${config.booksApiBaseUrl}/api/books`);
 		
 		if (res.ok) {
 			const data = await res.json();
@@ -36,29 +34,31 @@ export async function searchBooks(query: string = ''): Promise<BookItem[]> {
 
 			if (serverItems.length > 0) {
 				const mappedServer = serverItems.map((item: any) => ({
-					id: item.id || `live-${Math.random()}`,
-					title: item.title || 'Untitled Book',
-					author: item.author || 'Anonymous',
-					coverUrl: item.cover_url || '',
-					priceMist: item.price_mist ? BigInt(item.price_mist) : config.defaultBookPriceMist,
+					id: item.id,
+					title: item.title,
+					author: item.author,
+					coverUrl: item.cover_url || item.coverUrl,
+					priceMist: BigInt(item.price_mist || item.priceMist),
 					owner_wallet: item.owner_wallet || 'Admin'
 				}));
 				
-				// Ưu tiên dữ liệu từ Server vì đây là dữ liệu mới nhất
+				// Ưu tiên dữ liệu từ Server vì đây là dữ liệu mới nhất từ Admin
 				finalBooks = mappedServer;
 			}
 		}
 	} catch (err) {
-		console.warn('Admin server offline, using local frontend data.');
-	}
-
-	// Lọc theo từ khóa tìm kiếm (nếu có)
-	if (query) {
-		return finalBooks.filter((b: BookItem) => 
-			b.title.toLowerCase().includes(query.toLowerCase()) || 
-			b.author.toLowerCase().includes(query.toLowerCase())
-		);
+		console.warn('Admin server offline or sync pending, using local data.');
 	}
 	
 	return finalBooks;
+}
+
+// Giữ lại searchBooks như một wrapper nếu cần
+export async function searchBooks(query: string = ''): Promise<BookItem[]> {
+	const books = await fetchBooks();
+	if (!query) return books;
+	return books.filter((b: BookItem) => 
+		b.title.toLowerCase().includes(query.toLowerCase()) || 
+		b.author.toLowerCase().includes(query.toLowerCase())
+	);
 }
