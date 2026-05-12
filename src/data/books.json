@@ -1,0 +1,66 @@
+[
+  {
+    "id": "book-2",
+    "title": "Bảo Mật Smart Contract Web3",
+    "author": "Blockchain Security VN",
+    "coverUrl": "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=400&q=80",
+    "priceMist": "500000000",
+    "owner_wallet": "Admin"
+  },
+  {
+    "id": "book-3",
+    "title": "Phân Tích Dữ Liệu On-chain",
+    "author": "Data Nerd",
+    "coverUrl": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=80",
+    "priceMist": "200000000",
+    "owner_wallet": "Admin"
+  },
+  {
+    "id": "book-4",
+    "title": "Tâm Lý Học Hành Vi Đầu Tư",
+    "author": "Morgan Housel VN",
+    "coverUrl": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=400&q=80",
+    "priceMist": "150000000",
+    "owner_wallet": "Admin"
+  },
+  {
+    "id": "book-5",
+    "title": "Lập Trình Rust Cho Blockchain",
+    "author": "Steve Klabnik",
+    "coverUrl": "https://images.unsplash.com/photo-1614332287897-cdc485fa562d?auto=format&fit=crop&w=400&q=80",
+    "priceMist": "300000000",
+    "owner_wallet": "Admin"
+  },
+  {
+    "id": "book-6",
+    "title": "Thiết Kế Tokenomics Bền Vững",
+    "author": "Economics Expert",
+    "coverUrl": "https://images.unsplash.com/photo-1518186239751-6467fab907e7?auto=format&fit=crop&w=400&q=80",
+    "priceMist": "400000000",
+    "owner_wallet": "Admin"
+  },
+  {
+    "id": "book-7",
+    "title": "Xây Dựng DApp Trên Sui Với React",
+    "author": "Frontend Master",
+    "coverUrl": "https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&w=400&q=80",
+    "priceMist": "250000000",
+    "owner_wallet": "Admin"
+  },
+  {
+    "id": "book-8",
+    "title": "Kỹ Thuật DeFi 2.0 Toàn Tập",
+    "author": "Yield Farmer",
+    "coverUrl": "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=400&q=80",
+    "priceMist": "350000000",
+    "owner_wallet": "Admin"
+  },
+  {
+    "id": "book-9",
+    "title": "Trí Tuệ Nhân Tạo Trong Tài Chính",
+    "author": "AI Specialist",
+    "coverUrl": "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=400&q=80",
+    "priceMist": "450000000",
+    "owner_wallet": "Admin"
+  }
+]
