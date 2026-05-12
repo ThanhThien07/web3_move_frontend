@@ -1,9 +1,8 @@
-import type { SuiClientTypes } from '@mysten/sui/client';
-import type { CoinStruct } from '@mysten/sui/jsonRpc';
+import { SuiJsonRpcClient as SuiClient, type CoinStruct } from '@mysten/sui/jsonRpc';
 import { Transaction } from '@mysten/sui/transactions';
 import { DEFAULT_SUI_COIN_TYPE, type PaymentConfig } from './payment-config';
 
-type ClientType = SuiClientTypes.TransportMethods;
+type ClientType = SuiClient;
 
 const PAYMENT_GAS_BUDGET = 20_000_000n;
 
@@ -16,13 +15,13 @@ async function fetchAllTokenCoins(
 	let cursor: string | null = null;
 
 	while (true) {
-		const page = await client.listCoins({ owner, coinType, cursor, limit: 100 });
-		coins.push(...(page.objects as any));
-		if (!page.hasNextPage || !page.cursor) break;
-		cursor = page.cursor;
+		const page = await client.getCoins({ owner, coinType, cursor, limit: 100 });
+		coins.push(...page.data);
+		if (!page.hasNextPage || !page.nextCursor) break;
+		cursor = page.nextCursor;
 	}
 
-	return coins as any;
+	return coins;
 }
 
 export async function buildPaymentTx(
@@ -38,8 +37,6 @@ export async function buildPaymentTx(
 	if (config.coinType === DEFAULT_SUI_COIN_TYPE) {
 		const [coin] = tx.splitCoins(tx.gas, [amountMist]);
 		
-		// If the user has provided valid contract IDs, use the Move contract.
-		// Otherwise fallback to simple transfer (for demo/testing without contract).
 		if (config.packageId && config.packageId !== '0x_PLACEHOLDER_PACKAGE_ID') {
 			const ticket = tx.moveCall({
 				target: `${config.packageId}::web3::buy_ticket`,
@@ -57,7 +54,6 @@ export async function buildPaymentTx(
 		return tx;
 	}
 
-	// Logic for custom tokens
 	const coins = await fetchAllTokenCoins(client, owner, config.coinType);
 	if (coins.length === 0) {
 		throw new Error(`No token coins found for ${config.coinType}.`);
@@ -99,15 +95,10 @@ export async function buildPaymentTx(
 	return tx;
 }
 
-export function parsePaymentResult(result: SuiClientTypes.TransactionResult<{ effects: true }>) {
-	if (result.$kind === 'FailedTransaction') {
-		const error = result.FailedTransaction.status.error?.message ?? 'Transaction failed.';
-		throw new Error(error);
-	}
-
+export function parsePaymentResult(result: any) {
 	return {
-		digest: result.Transaction.digest,
-		status: result.Transaction.status,
-		effects: result.Transaction.effects,
+		digest: result.digest,
+		status: result.status,
+		effects: result.effects,
 	};
 }

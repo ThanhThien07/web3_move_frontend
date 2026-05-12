@@ -1,6 +1,6 @@
 import { useCurrentAccount, useSuiClient, useCurrentWallet, useSuiClientContext, useAccounts, useSwitchAccount } from '@mysten/dapp-kit';
 import { useEffect, useState } from 'react';
-import { DEFAULT_SUI_COIN_TYPE, MIST_PER_SUI, getPaymentConfig } from '../payment-config';
+import { DEFAULT_SUI_COIN_TYPE, MIST_PER_SUI, getPaymentConfig } from '../lib/payment-config';
 
 function WalletStatus() {
 	const account = useCurrentAccount();

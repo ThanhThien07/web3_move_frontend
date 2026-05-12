@@ -1,20 +1,8 @@
-import { useMemo, useState, useEffect, type FormEvent } from 'react';
-import { useCurrentAccount, useSuiClient, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
-import { type BookItem, searchBooks } from '../books-api';
-import { getPaymentConfig, MIST_PER_SUI } from '../payment-config';
-import { buildPaymentTx, parsePaymentResult } from '../payment-tx';
-import { requestBookFulfillment } from '../fulfillment-api';
-
-type PurchaseRecord = {
-	bookId: string;
-	title: string;
-	digest: string;
-	accessUrl: string;
-	fulfillmentMessage: string;
-	createdAt: string;
-};
-
-const PURCHASES_STORAGE_KEY = 'book-marketplace.recentPurchases';
+import { type FormEvent, useEffect, useState } from 'react';
+import { useMarketplace } from '../lib/useMarketplace';
+import { MIST_PER_SUI } from '../lib/payment-config';
+import { toast } from 'sonner';
+import { useCurrentAccount } from '@mysten/dapp-kit';
 
 function formatMistToToken(mist: bigint, tokenName: string) {
 	const whole = mist / MIST_PER_SUI;
@@ -22,246 +10,162 @@ function formatMistToToken(mist: bigint, tokenName: string) {
 	return frac ? `${whole}.${frac} ${tokenName}` : `${whole} ${tokenName}`;
 }
 
-function loadRecentPurchases(): PurchaseRecord[] {
-	try {
-		const raw = localStorage.getItem(PURCHASES_STORAGE_KEY);
-		if (!raw) return [];
-		const parsed = JSON.parse(raw) as PurchaseRecord[];
-		return parsed.slice(0, 8);
-	} catch {
-		return [];
-	}
-}
-
-function saveRecentPurchases(records: PurchaseRecord[]) {
-	localStorage.setItem(PURCHASES_STORAGE_KEY, JSON.stringify(records.slice(0, 8)));
-}
-
 export default function BookMarketplace() {
 	const account = useCurrentAccount();
-	const client = useSuiClient();
-	const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+	const {
+		query,
+		setQuery,
+		books,
+		loading,
+		loadError,
+		busyBookId,
+		recentPurchases,
+		handleSearch,
+		buyBook,
+		paymentConfig
+	} = useMarketplace();
 
-	const [query, setQuery] = useState('blockchain');
-	const [loading, setLoading] = useState(false);
-	const [loadError, setLoadError] = useState<string | null>(null);
-	const [books, setBooks] = useState<BookItem[]>([]);
-	const [busyBookId, setBusyBookId] = useState<string | null>(null);
 	const [actionMessage, setActionMessage] = useState<string | null>(null);
-	const [lastAccessUrl, setLastAccessUrl] = useState<string | null>(null);
-	const [recentPurchases, setRecentPurchases] = useState<PurchaseRecord[]>(() => loadRecentPurchases());
-
-	const paymentConfig = useMemo(() => {
-		try {
-			return getPaymentConfig();
-		} catch {
-			return null;
-		}
-	}, []);
-
-	const configError = useMemo(() => {
-		if (!paymentConfig) {
-			return 'Missing or invalid payment configuration.';
-		}
-		return null;
-	}, [paymentConfig]);
 
 	useEffect(() => {
 		if (paymentConfig) {
 			handleSearch();
 		}
-	}, [paymentConfig]);
+	}, [paymentConfig, handleSearch]);
 
-	async function handleSearch(event?: FormEvent) {
-		event?.preventDefault();
-		setLoadError(null);
-		setActionMessage(null);
-		setLoading(true);
+	const onSearch = (e: FormEvent) => {
+		e.preventDefault();
+		handleSearch();
+	};
+
+	const onBuy = async (book: any) => {
 		try {
-			if (!paymentConfig) throw new Error('Payment configuration is not ready.');
-			const result = await searchBooks(query, paymentConfig);
-			setBooks(result);
-			setLastAccessUrl(null);
+			const fulfillment = await buyBook(book);
+			toast.success(`Success! ${fulfillment.message}`);
+			setActionMessage(`Access Link: ${fulfillment.accessUrl}`);
 		} catch (error) {
-			setLoadError(error instanceof Error ? error.message : String(error));
-			setBooks([]);
-		} finally {
-			setLoading(false);
+			toast.error(error instanceof Error ? error.message : String(error));
 		}
-	}
-
-	async function handleBuy(book: BookItem) {
-		if (!account) {
-			setActionMessage('Please connect wallet before purchasing.');
-			return;
-		}
-		if (configError || !paymentConfig) {
-			setActionMessage(configError ?? 'Invalid payment configuration.');
-			return;
-		}
-
-		const config = paymentConfig;
-		setBusyBookId(book.id);
-		setActionMessage(null);
-		try {
-			const tx = await buildPaymentTx(
-				config,
-				book.priceMist,
-				client,
-				account.address,
-				book.id
-			);
-			
-			const result = await signAndExecuteTransaction({ 
-				transaction: tx,
-			});
-			
-			const digest = result.digest;
-			await client.waitForTransaction({ digest });
-			
-			const fulfillment = await requestBookFulfillment({
-				config,
-				book,
-				walletAddress: account.address,
-				digest,
-			});
-
-			const record: PurchaseRecord = {
-				bookId: book.id,
-				title: book.title,
-				digest: digest,
-				accessUrl: fulfillment.accessUrl,
-				fulfillmentMessage: fulfillment.message,
-				createdAt: new Date().toISOString(),
-			};
-			const updated = [record, ...recentPurchases];
-			setRecentPurchases(updated);
-			saveRecentPurchases(updated);
-
-			setLastAccessUrl(fulfillment.accessUrl);
-			setActionMessage(`Payment successful. ${fulfillment.message}`);
-		} catch (error) {
-			setActionMessage(error instanceof Error ? error.message : String(error));
-		} finally {
-			setBusyBookId(null);
-		}
-	}
+	};
 
 	return (
-		<section className="app-card space-y-4 p-4 sm:p-5">
-			<div className="flex flex-wrap items-center justify-between gap-2">
-				<h2 className="text-base font-semibold text-slate-100 sm:text-lg">Book marketplace</h2>
-				<span className="rounded-full border border-cyan-400/45 bg-cyan-500/15 px-2 py-1 text-xs font-medium text-cyan-200">
-					Pay with {paymentConfig?.tokenName ?? 'library token'}
-				</span>
-			</div>
-			{configError ? (
-				<p className="rounded-lg border border-rose-400/40 bg-rose-500/15 p-3 text-sm text-rose-200">
-					Configuration error: {configError}
-				</p>
-			) : null}
+		<section className="bg-white rounded-2xl shadow-sm border border-slate-100 space-y-6 p-6 sm:p-8">
+			<header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+				<div>
+					<h2 className="text-2xl font-black text-slate-800">Explore Library</h2>
+					<p className="text-sm text-slate-500">Discover premium books on the Sui blockchain</p>
+				</div>
+				
+				<form onSubmit={onSearch} className="flex gap-2">
+					<input
+						type="text"
+						value={query}
+						onChange={(e) => setQuery(e.target.value)}
+						placeholder="Search books..."
+						className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-sm w-full md:w-64"
+					/>
+					<button
+						type="submit"
+						disabled={loading}
+						className="primary-button whitespace-nowrap"
+					>
+						{loading ? 'Searching...' : 'Search'}
+					</button>
+				</form>
+			</header>
 
-			<form className="flex flex-col gap-2 sm:flex-row" onSubmit={handleSearch}>
-				<input
-					className="w-full rounded-lg border border-slate-500/70 bg-slate-900/50 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400"
-					value={query}
-					onChange={(event) => setQuery(event.target.value)}
-					placeholder="Search books (e.g. solidity, move, defi)"
-				/>
-				<button
-					type="submit"
-					className="w-full rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400 disabled:opacity-50 sm:w-auto"
-					disabled={loading || !!configError}
-				>
-					{loading ? 'Searching...' : 'Search'}
-				</button>
-			</form>
-
-			{loadError ? (
-				<p className="rounded-lg border border-rose-400/40 bg-rose-500/15 p-3 text-sm text-rose-200">
+			{loadError && (
+				<div className="p-4 bg-rose-50 border border-rose-100 rounded-xl text-rose-600 text-sm flex items-center gap-3">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
 					{loadError}
-				</p>
-			) : null}
+				</div>
+			)}
 
-			<div className="grid gap-3 sm:grid-cols-2">
+			<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 				{books.map((book) => (
 					<article
 						key={book.id}
-						className="rounded-xl border border-slate-600/70 bg-slate-900/50 p-3 text-slate-100"
+						className="group relative flex flex-col bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-xl hover:border-emerald-100 transition-all duration-300"
 					>
-						{book.coverUrl ? (
-							<img
-								src={book.coverUrl}
-								alt={book.title}
-								className="h-40 w-full rounded-md object-cover"
-								loading="lazy"
-							/>
-						) : (
-							<div className="flex h-40 w-full items-center justify-center rounded-md bg-slate-800 text-xs text-slate-400">
-								No cover image
+						<div className="aspect-[4/5] w-full overflow-hidden bg-slate-50">
+							{book.coverUrl ? (
+								<img
+									src={book.coverUrl}
+									alt={book.title}
+									className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+								/>
+							) : (
+								<div className="flex h-full w-full items-center justify-center text-slate-300">
+									<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+								</div>
+							)}
+						</div>
+
+						<div className="p-5 flex flex-col flex-grow">
+							<h3 className="text-base font-bold text-slate-800 line-clamp-2 leading-tight mb-1">{book.title}</h3>
+							<p className="text-xs font-medium text-slate-400 mb-4">by {book.author}</p>
+							
+							<div className="mt-auto flex items-center justify-between gap-3 pt-4 border-t border-slate-50">
+								<div className="flex flex-col">
+									<span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Price</span>
+									<span className="text-lg font-black text-emerald-600">
+										{formatMistToToken(book.priceMist, paymentConfig?.tokenName ?? 'SUI')}
+									</span>
+								</div>
+								
+								<button
+									type="button"
+									disabled={!account || busyBookId === book.id}
+									onClick={() => void onBuy(book)}
+									className="primary-button h-10 px-4 text-xs font-bold shadow-md shadow-emerald-500/10"
+								>
+									{busyBookId === book.id ? 'Buying...' : 'Redeem Now'}
+								</button>
 							</div>
-						)}
-						<h3 className="mt-3 line-clamp-2 text-sm font-semibold">{book.title}</h3>
-						<p className="mt-1 text-xs text-slate-300">by {book.author}</p>
-						<div className="mt-3 flex items-center justify-between gap-2">
-							<p className="text-sm font-semibold text-cyan-300">
-						{formatMistToToken(book.priceMist, paymentConfig?.tokenName ?? 'token')}
-					</p>
-							<button
-								type="button"
-								className="rounded-lg bg-teal-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-400 disabled:opacity-50"
-								disabled={!account || busyBookId === book.id || !!configError}
-								onClick={() => void handleBuy(book)}
-							>
-								{busyBookId === book.id ? `Processing ${paymentConfig?.tokenName ?? 'token'}...` : `Redeem with ${paymentConfig?.tokenName ?? 'token'}`}
-							</button>
 						</div>
 					</article>
 				))}
 			</div>
 
-			{books.length === 0 && !loading && !loadError ? (
-				<p className="text-sm text-slate-300">No books loaded yet. Try searching keywords above.</p>
-			) : null}
+			{books.length === 0 && !loading && !loadError && (
+				<div className="py-20 text-center border-2 border-dashed border-slate-100 rounded-3xl">
+					<p className="text-slate-400 font-medium">No books found. Try a different search.</p>
+				</div>
+			)}
 
-			{actionMessage ? (
-				<p className="rounded-lg border border-slate-500/60 bg-slate-900/60 p-3 text-sm text-slate-200">
-					{actionMessage}
-				</p>
-			) : null}
-			{lastAccessUrl ? (
-				<a
-					href={lastAccessUrl}
-					target="_blank"
-					rel="noreferrer"
-					className="inline-flex rounded-lg border border-cyan-400/45 bg-cyan-500/15 px-3 py-2 text-sm font-semibold text-cyan-200"
-				>
-					Open your latest book access link
-				</a>
-			) : null}
-
-			<div className="space-y-2">
-				<h3 className="text-sm font-semibold text-slate-100">Recent purchases</h3>
-				{recentPurchases.length === 0 ? (
-					<p className="text-xs text-slate-400">No purchases yet.</p>
-				) : (
-					<ul className="space-y-2">
+			{recentPurchases.length > 0 && (
+				<div className="pt-8 border-t border-slate-100 space-y-4">
+					<div className="flex items-center justify-between">
+						<h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Recent Purchases</h3>
+						<span className="h-px flex-grow mx-4 bg-slate-100"></span>
+					</div>
+					<div className="grid gap-4 sm:grid-cols-2">
 						{recentPurchases.map((item) => (
-							<li
+							<div
 								key={`${item.digest}-${item.bookId}`}
-								className="rounded-lg border border-slate-600/60 bg-slate-900/50 p-2 text-xs text-slate-300"
+								className="flex gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-md transition-all group"
 							>
-								<p className="font-medium text-slate-100">{item.title}</p>
-								<p className="mt-1 text-[11px] text-cyan-300">{item.fulfillmentMessage}</p>
-								<p className="mt-1 break-all font-mono">{item.digest}</p>
-								<a href={item.accessUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block underline">
-									Open access link
-								</a>
-							</li>
+								<div className="h-12 w-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+									<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+								</div>
+								<div className="flex flex-col min-w-0">
+									<span className="text-sm font-bold text-slate-800 truncate">{item.title}</span>
+									<span className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-tighter">Transaction: {item.digest.slice(0, 10)}...</span>
+									<a 
+										href={item.accessUrl} 
+										target="_blank" 
+										rel="noreferrer" 
+										className="mt-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+									>
+										Open Access
+										<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+									</a>
+								</div>
+							</div>
 						))}
-					</ul>
-				)}
-			</div>
+					</div>
+				</div>
+			)}
 		</section>
 	);
 }
