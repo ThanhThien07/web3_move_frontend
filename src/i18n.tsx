@@ -27,6 +27,11 @@ const translations: Translations = {
   footerText: { en: '© 2026 ITC Web3 Decentralized Library.', vi: '© 2026 Thư viện phi tập trung ITC Web3.' },
   itemsPerPage: { en: 'Items per page', vi: 'Số bản ghi mỗi trang' },
   page: { en: 'Page', vi: 'Trang' },
+  chatWithOwner: { en: 'Consultation', vi: 'Tư vấn ngay' },
+  owner: { en: 'Seller', vi: 'Người bán' },
+  typeMessage: { en: 'Type a message...', vi: 'Nhập tin nhắn...' },
+  send: { en: 'Send', vi: 'Gửi' },
+  loginToChat: { en: 'Please login to chat', vi: 'Vui lòng đăng nhập để chat' },
 };
 
 interface I18nContextType {

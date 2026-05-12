@@ -6,6 +6,7 @@ import { BookOpen, ShieldCheck, Wallet, ArrowLeft, Loader2, CreditCard } from 'l
 import { toast } from 'sonner';
 import { useAuth } from '../components/AuthContext';
 import { getPaymentConfig, MIST_PER_SUI } from '../lib/payment-config';
+import { type BookItem } from '../lib/books-api';
 
 const NETWORKS = [
   { id: 'devnet', name: 'Devnet (Thử nghiệm)', color: 'bg-indigo-500' },
@@ -21,7 +22,7 @@ export default function Checkout() {
   const suiClient = useSuiClient();
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
 
-  const [book, setBook] = useState<any>(null);
+  const [book, setBook] = useState<BookItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [network, setNetwork] = useState('testnet');
@@ -34,8 +35,18 @@ export default function Checkout() {
         const res = await fetch(`${paymentConfig.booksApiBaseUrl}/api/books`);
         const books = await res.json();
         const found = books.find((b: any) => b.id === id);
-        if (found) setBook(found);
-        else toast.error('Không tìm thấy sách');
+        if (found) {
+          setBook({
+            id: found.id,
+            title: found.title,
+            author: found.author,
+            coverUrl: found.cover_url,
+            priceMist: BigInt(found.price_mist),
+            owner_wallet: found.owner_wallet
+          });
+        } else {
+          toast.error('Không tìm thấy sách');
+        }
       } catch (err) {
         toast.error('Lỗi tải dữ liệu');
       } finally {
@@ -43,26 +54,26 @@ export default function Checkout() {
       }
     }
     fetchBook();
-  }, [id]);
+  }, [id, paymentConfig.booksApiBaseUrl]);
 
   const handlePayment = async () => {
     if (!account) return toast.error('Vui lòng kết nối ví SUI');
-    if (!user) return toast.error('Vui lòng đăng nhập tài khoản');
+    if (!user || !book) return toast.error('Vui lòng đăng nhập tài khoản');
 
     setPaying(true);
     try {
       const tx = new Transaction();
-      const amount = BigInt(book.priceMist);
+      const amount = book.priceMist;
 
-      // Simple SUI Transfer to Treasury
+      // Transfer to Owner Wallet (or Treasury if not specified)
+      const receiver = book.owner_wallet || paymentConfig.receiver;
       const [coin] = tx.splitCoins(tx.gas, [amount]);
-      tx.transferObjects([coin], paymentConfig.receiver);
+      tx.transferObjects([coin], receiver);
 
       signAndExecuteTransaction(
         { transaction: tx },
         {
           onSuccess: async (result) => {
-            // Verify with backend
             const res = await fetch(`${paymentConfig.booksApiBaseUrl}/api/verify-purchase`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -80,7 +91,7 @@ export default function Checkout() {
               toast.success('Thanh toán thành công!');
               navigate('/collection');
             } else {
-              toast.error('Giao dịch thành công nhưng xác thực thất bại. Vui lòng liên hệ hỗ trợ.');
+              toast.error('Thanh toán thành công nhưng xác thực thất bại. Vui lòng liên hệ hỗ trợ.');
             }
           },
           onError: (err) => {
@@ -98,18 +109,23 @@ export default function Checkout() {
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin w-10 h-10 text-[#10b981]" /></div>;
   if (!book) return <div className="text-center py-20">Sách không tồn tại</div>;
 
+  const displayPrice = (Number(book.priceMist) / Number(MIST_PER_SUI)).toFixed(2);
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 px-4 sm:px-6">
-      <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors">
-        <ArrowLeft className="w-4 h-4" /> Quay lại
+      <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors group">
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Quay lại
       </button>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Left: Book Info */}
         <div className="md:col-span-2 space-y-6">
           <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm flex flex-col sm:flex-row gap-6 md:gap-8">
             <div className="w-full sm:w-40 aspect-[3/4] bg-slate-100 rounded-xl overflow-hidden shadow-md shrink-0">
-              <img src={book.coverUrl} className="w-full h-full object-cover" alt={book.title} />
+              {book.coverUrl ? (
+                <img src={book.coverUrl} className="w-full h-full object-cover" alt={book.title} />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center"><BookOpen className="w-8 h-8 text-slate-300" /></div>
+              )}
             </div>
             <div className="space-y-4">
               <div className="space-y-1">
@@ -135,7 +151,6 @@ export default function Checkout() {
           </div>
         </div>
 
-        {/* Right: Payment Card */}
         <div className="space-y-6">
           <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl space-y-6 sticky top-24">
             <h3 className="text-xl font-black text-slate-800">Hóa đơn</h3>
@@ -143,7 +158,7 @@ export default function Checkout() {
             <div className="space-y-4">
               <div className="flex justify-between text-slate-500 text-sm">
                 <span>Giá sách</span>
-                <span>{Number(book.priceMist) / Number(MIST_PER_SUI)} SUI</span>
+                <span>{displayPrice} SUI</span>
               </div>
               <div className="flex justify-between text-slate-500 text-sm">
                 <span>Phí mạng (ước tính)</span>
@@ -151,7 +166,7 @@ export default function Checkout() {
               </div>
               <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
                 <span className="font-bold text-slate-800">Tổng cộng</span>
-                <span className="text-2xl font-black text-[#10b981]">{Number(book.priceMist) / Number(MIST_PER_SUI)} SUI</span>
+                <span className="text-2xl font-black text-[#10b981]">{displayPrice} SUI</span>
               </div>
             </div>
 

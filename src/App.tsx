@@ -12,6 +12,7 @@ import MyCollection from './pages/MyCollection';
 import Checkout from './pages/Checkout';
 import Favorites from './pages/Favorites';
 import PurchaseHistory from './pages/PurchaseHistory';
+import ChatWidget from './components/ChatWidget';
 
 const { networkConfig } = createNetworkConfig({
   devnet: { url: 'https://fullnode.devnet.sui.io:443' } as any,
@@ -37,6 +38,8 @@ function AppContent() {
           <Route path="/checkout/:id" element={<Checkout />} />
         </Routes>
       </main>
+
+      <ChatWidget />
 
       <footer className="pt-10 pb-10 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6 px-6 max-w-7xl mx-auto text-slate-500 text-sm">
         <p>{t('footerText')} Phong cách Alphabooks.</p>

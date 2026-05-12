@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Loader2, Sparkles, AlertCircle, BookOpen, ShoppingCart, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, Sparkles, AlertCircle, BookOpen, ShoppingCart, Heart, ChevronLeft, ChevronRight, MessageCircle, User } from 'lucide-react';
 import { searchBooks, type BookItem } from '../lib/books-api';
 import { getPaymentConfig, MIST_PER_SUI } from '../lib/payment-config';
 import { useAuth } from './AuthContext';
@@ -160,7 +160,30 @@ export default function LibraryGrid({ onSelectBook }: LibraryGridProps) {
 
                   <div className="p-4 flex flex-col flex-grow">
                     <h3 className="text-slate-800 font-bold text-sm line-clamp-2 mb-1 group-hover:text-[#10b981] transition-colors">{book.title}</h3>
-                    <p className="text-slate-500 text-xs mb-3">{book.author}</p>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-slate-500 text-xs">{book.author}</p>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!user) return toast.error(t('loginToChat'));
+                          (window as any).openChat?.(book);
+                        }}
+                        className="flex items-center gap-1.5 text-[#10b981] hover:text-[#059669] transition-colors"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">{t('chatWithOwner')}</span>
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2 mb-4 p-2 bg-slate-50 rounded-lg border border-slate-100">
+                      <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center">
+                        <User className="w-3 h-3 text-slate-500" />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">{t('owner')}</span>
+                        <span className="text-[10px] font-mono text-slate-600 truncate">{book.owner_wallet || 'Admin'}</span>
+                      </div>
+                    </div>
                     
                     <div className="mt-auto flex items-center justify-between">
                       <span className="price-text">
