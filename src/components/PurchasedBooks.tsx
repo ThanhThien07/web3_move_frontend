@@ -19,8 +19,8 @@ export default function PurchasedBooks({ purchases }: PurchasedBooksProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <div className="p-2 bg-[#10b981]/10 rounded-lg border border-[#10b981]/20">
-          <Clock className="w-5 h-5 text-[#10b981]" />
+        <div className="p-2 bg-brand-primary/10 rounded-lg border border-brand-primary/20">
+          <Clock className="w-5 h-5 text-brand-primary" />
         </div>
         <h3 className="text-xl font-extrabold text-slate-800">Hoạt động gần đây</h3>
       </div>
@@ -36,11 +36,11 @@ export default function PurchasedBooks({ purchases }: PurchasedBooksProps) {
                   {new Date(purchase.createdAt).toLocaleDateString()}
                 </div>
               </div>
-              <a 
-                href={purchase.accessUrl} 
-                target="_blank" 
+              <a
+                href={purchase.accessUrl}
+                target="_blank"
                 rel="noreferrer"
-                className="p-2 bg-slate-50 hover:bg-slate-100 text-[#10b981] rounded-lg transition-colors shrink-0 border border-slate-200"
+                className="p-2 bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-primary rounded-lg transition-colors shrink-0 border border-brand-primary/20"
               >
                 <ExternalLink className="w-4 h-4" />
               </a>
@@ -51,7 +51,7 @@ export default function PurchasedBooks({ purchases }: PurchasedBooksProps) {
                 <span className="text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1">
                   <Hash className="w-3 h-3" /> Tx Digest
                 </span>
-                <span className="text-[#10b981] font-mono truncate max-w-[150px]">{purchase.digest}</span>
+                <span className="text-brand-primary font-mono truncate max-w-[150px]">{purchase.digest}</span>
               </div>
               <p className="text-[11px] text-emerald-600 font-medium bg-emerald-50 p-1.5 rounded-md">
                 {purchase.message}
