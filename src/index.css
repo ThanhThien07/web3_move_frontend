@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-primary: #10b981; /* Emerald 500 - like a bookstore */
+  --color-brand-secondary: #059669; /* Emerald 600 */
+  --color-brand-accent: #f59e0b; /* Amber 500 - for highlights/price */
+  
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-[#f8fafc] text-slate-800 antialiased; /* Light gray background, dark text */
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .book-card {
+    @apply bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300 border border-slate-100;
+  }
+
+  .primary-button {
+    @apply bg-[#10b981] hover:bg-[#059669] text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .secondary-button {
+    @apply bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium py-2 px-4 rounded-lg transition-colors duration-200 active:scale-95;
+  }
+
+  .price-text {
+    @apply text-[#f59e0b] font-bold text-lg;
+  }
+}
+
+/* Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full hover:bg-slate-400 transition-colors;
+}
