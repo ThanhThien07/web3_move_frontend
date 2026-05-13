@@ -20,7 +20,7 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const account = useCurrentAccount();
-  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
 
   const [book, setBook] = useState<BookItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,6 +88,8 @@ export default function Checkout() {
     if (!user || !book) return toast.error('Vui lòng đăng nhập tài khoản');
 
     setPaying(true);
+    const toastId = toast.loading('Đang chuẩn bị giao dịch...');
+
     try {
       const tx = new Transaction();
       const amount = book.priceMist;
@@ -97,38 +99,42 @@ export default function Checkout() {
       const [coin] = tx.splitCoins(tx.gas, [amount]);
       tx.transferObjects([coin], receiver);
 
-      signAndExecuteTransaction(
-        { transaction: tx },
-        {
-          onSuccess: async (result) => {
-            // Xác thực giao dịch (Nếu có server backend)
-            try {
-              await fetch(`${paymentConfig.booksApiBaseUrl}/api/verify-purchase`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  username: user.username,
-                  bookId: book.id,
-                  digest: result.digest,
-                  walletAddress: account.address,
-                  amount: (Number(book.priceMist) / Number(MIST_PER_SUI)).toString(),
-                  network: network
-                })
-              });
-            } catch (e) {
-              console.warn('Backend offline, skip verification step.');
-            }
+      toast.loading('Vui lòng xác nhận trên ví SUI...', { id: toastId });
+      
+      const result = await signAndExecuteTransaction({ transaction: tx });
+      
+      toast.loading('Đang xác thực giao dịch on-chain...', { id: toastId });
 
-            toast.success('Thanh toán thành công trên Blockchain!');
-            navigate('/collection');
-          },
-          onError: (err) => {
-            toast.error(`Giao dịch thất bại: ${err.message}`);
-          }
+      // Xác thực giao dịch với Backend
+      try {
+        const verifyRes = await fetch(`${paymentConfig.booksApiBaseUrl}/api/verify-purchase`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: user.username,
+            bookId: book.id,
+            digest: result.digest,
+            walletAddress: account.address,
+            amount: (Number(book.priceMist) / Number(MIST_PER_SUI)).toString(),
+            network: network
+          })
+        });
+
+        if (!verifyRes.ok) {
+          const errorData = await verifyRes.json();
+          throw new Error(errorData.error || 'Xác thực backend thất bại');
         }
-      );
+
+        toast.success('Thanh toán và xác thực thành công!', { id: toastId });
+        navigate('/history'); // Chuyển thẳng đến lịch sử để xem ngay
+      } catch (e: any) {
+        console.error('Verification error:', e);
+        toast.error(`Cảnh báo: ${e.message || 'Không thể đồng bộ ngay'}`, { id: toastId });
+        navigate('/history');
+      }
     } catch (err: any) {
-      toast.error(err.message || 'Lỗi giao dịch');
+      console.error('Payment error:', err);
+      toast.error(`Giao dịch thất bại: ${err.message}`, { id: toastId });
     } finally {
       setPaying(false);
     }
