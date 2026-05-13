@@ -24,7 +24,7 @@ const translations: Translations = {
   searching: { en: 'Searching books...', vi: 'Đang tìm sách...' },
   noBooks: { en: 'No books found.', vi: 'Không tìm thấy sách nào.' },
   retry: { en: 'Retry', vi: 'Thử lại' },
-  footerText: { en: '© 2026 Digital Library Platform.', vi: '© 2026 Nền tảng Thư viện Số.' },
+  footerText: { en: '© 2026 ITC Web3 Decentralized Library.', vi: '© 2026 Thư viện phi tập trung ITC Web3.' },
   itemsPerPage: { en: 'Items per page', vi: 'Số bản ghi mỗi trang' },
   page: { en: 'Page', vi: 'Trang' },
   chatWithOwner: { en: 'Consultation', vi: 'Tư vấn ngay' },

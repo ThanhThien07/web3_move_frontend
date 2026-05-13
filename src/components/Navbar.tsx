@@ -156,8 +156,8 @@ export default function Navbar() {
               <BookOpen className="text-white w-6 h-6" />
             </div>
             <div className="flex flex-col">
-              <span className="text-lg md:text-xl font-bold tracking-tight text-slate-800 leading-none">Library</span>
-              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-primary">Digital Platform</span>
+              <span className="text-lg md:text-xl font-bold tracking-tight text-slate-800 leading-none">AlphaLibrary</span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-primary">Web3 BookStore</span>
             </div>
           </Link>
         </div>
